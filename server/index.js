@@ -90,10 +90,12 @@ app.post('/api/entities/:entityName', async (req, res) => {
   
       // Fetch attribute values for each instance
       const data = await Promise.all(instances.map(async instance => {
-        const attributesQuery = 'SELECT attribute_name, attribute_value FROM instance_attributes INNER JOIN attributes ON instance_attributes.attribute_id = attributes.attribute_id WHERE instance_id = $1';
+        const attributesQuery = 'SELECT instance_id,attribute_name, attribute_value FROM instance_attributes INNER JOIN attributes ON instance_attributes.attribute_id = attributes.attribute_id WHERE instance_id = $1';
         const attributesResult = await pool.query(attributesQuery, [instance.instance_id]);
-        return attributesResult.rows.reduce((acc, { attribute_name, attribute_value }) => {
+        console.log("attribute",attributesResult);
+        return attributesResult.rows.reduce((acc, { instance_id,attribute_name, attribute_value }) => {
           acc[attribute_name] = attribute_value;
+          acc["instance_id"] = instance_id;
           return acc;
         }, {});
       }));
@@ -105,6 +107,36 @@ app.post('/api/entities/:entityName', async (req, res) => {
     }
   });
   
+
+  app.get('/api/entity_attributes/:entityName', async (req, res) => {
+    const { entityName } = req.params;
+  
+    try {
+      // Execute PostgreSQL query to retrieve attribute names and types
+      const query = `
+        SELECT attribute_name, attribute_type
+        FROM attributes
+        INNER JOIN entities ON entities.entity_id = attributes.entity_id
+        WHERE entity_name = $1
+      `;
+      const result = await pool.query(query, [entityName]);
+  
+      // Extract attribute names and types from the query result
+      const attributes = result.rows.map(row => ({
+        name: row.attribute_name,
+        type: row.attribute_type
+      }));
+  
+      res.json(attributes);
+    } catch (error) {
+      console.error('Error fetching entity attributes:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+  
+
+
+
   // Update (PUT or PATCH)
   app.put('/api/entities/:entityName/:instanceId', async (req, res) => {
     const entityName = req.params.entityName;

@@ -7,23 +7,37 @@ function EntityPage() {
   const [instances, setInstances] = useState([]);
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(true);
+  const [attributes, setAttributes] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await fetch(`http://localhost:5000/api/entities/${entityName}`);
-        if (response.ok) {
-          const data = await response.json();
+        // console.log("responses",await response.json());
+        const data = await response.json();
+        console.log(data);
+
+        if (response.ok && data.length>0) {
+        //   console.log("hello",data[0].instance_id);
           setInstances(data);
           setLoading(false);
         } else {
-          // Handle error
+            const attributesResponse = await fetch(`http://localhost:5000/api/entity_attributes/${entityName}`);
+            const attributesData = await attributesResponse.json();
+            setAttributes(attributesData);
+            setLoading(false);
         }
       } catch (error) {
         console.error('Error:', error);
       }
     };
-    fetchData();
+    const timeout = setTimeout(() => {
+        setLoading(false); // Set loading to false after 5 seconds
+      }, 2000);
+    
+      fetchData();
+    
+      return () => clearTimeout(timeout);
   }, [entityName]);
 
   const handleInputChange = (event) => {
@@ -58,6 +72,7 @@ function EntityPage() {
 
   const handleUpdateInstance = async (instanceId) => {
     try {
+        console.log("updating instance", instanceId);
       const response = await fetch(`http://localhost:5000/api/entities/${entityName}/${instanceId}`, {
         method: 'PUT',
         headers: {
@@ -84,6 +99,7 @@ function EntityPage() {
 
   const handleDeleteInstance = async (instanceId) => {
     try {
+        console.log('Deleting instance with id:', instanceId);
       const response = await fetch(`http://localhost:5000/api/entities/${entityName}/${instanceId}`, {
         method: 'DELETE'
       });
@@ -108,48 +124,53 @@ function EntityPage() {
     return <div>Loading...</div>;
   }
 
+  
   return (
     <div>
       <h2>{entityName} Data</h2>
-      <table>
-        <thead>
-          <tr>
-            {Object.keys(instances[0]).map(attribute => (
-              <th key={attribute}>{attribute}</th>
-            ))}
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {instances.map(instance => (
-            <tr key={instance.instance_id}>
-              {Object.keys(instance).map(attribute => (
-                <td key={attribute}>{instance[attribute]}</td>
-              ))}
-              <td>
-                <button onClick={() => handleUpdateInstance(instance.instance_id)}>Update</button>
-                <button onClick={() => handleDeleteInstance(instance.instance_id)}>Delete</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <h3>Add New Instance</h3>
       <div>
-        {Object.keys(instances[0]).map(attribute => (
+  <h3>Add New Instance</h3>
+  {attributes.map(attribute => (
           <input
-            key={attribute}
+            key={attribute.name}
             type="text"
-            name={attribute}
-            value={formData[attribute] || ''}
-            placeholder={attribute}
+            name={attribute.name}
+            value={formData[attribute.name] || ''}
+            placeholder={attribute.name}
             onChange={handleInputChange}
           />
         ))}
-        <button onClick={handleAddInstance}>Add</button>
-      </div>
+  <button onClick={handleAddInstance}>Add</button>
+</div>
+
+      {instances.length > 0 && (
+        <table>
+          <thead>
+            <tr>
+              {Object.keys(instances[0]).filter(attribute => attribute !== 'instance_id').map(attribute => (
+                <th key={attribute}>{attribute}</th>
+              ))}
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {instances.map(instance => (
+              <tr key={instance.instance_id}>
+                {Object.keys(instance).filter(attribute => attribute !== 'instance_id').map(attribute => (
+                  <td key={attribute}>{instance[attribute]}</td>
+                ))}
+                <td>
+                  <button onClick={() => handleUpdateInstance(instance.instance_id)}>Update</button>
+                  <button onClick={() => handleDeleteInstance(instance.instance_id)}>Delete</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
+  
 }
 
 export default EntityPage;
