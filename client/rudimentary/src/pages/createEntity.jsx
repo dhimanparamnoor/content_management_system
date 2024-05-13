@@ -1,7 +1,7 @@
 // CreateEntity.js
 import React, { useState } from 'react';
 
-function CreateEntity() {
+function CreateEntity({updateEntityList}) {
   const [entityName, setEntityName] = useState('');
   const [attributes, setAttributes] = useState([]);
 
@@ -25,6 +25,8 @@ function CreateEntity() {
         body: JSON.stringify({ entity_name: entityName, attributes })
       });
       if (response.ok) {
+        // Call the function to update the entity list
+        updateEntityList();
         // Handle success
       } else {
         // Handle error

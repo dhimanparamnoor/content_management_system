@@ -29,7 +29,7 @@ app.post('/api/entities', async (req, res) => {
     }
   });
   
-  // Read entities
+
   app.get('/api/entities', async (req, res) => {
     try {
       const entitiesQuery = 'SELECT * FROM entities';
@@ -43,7 +43,7 @@ app.post('/api/entities', async (req, res) => {
     }
   });
 
-  // Create (POST)
+
 app.post('/api/entities/:entityName', async (req, res) => {
     const entityName = req.params.entityName;
     const data = req.body;
@@ -112,7 +112,6 @@ app.post('/api/entities/:entityName', async (req, res) => {
     const { entityName } = req.params;
   
     try {
-      // Execute PostgreSQL query to retrieve attribute names and types
       const query = `
         SELECT attribute_name, attribute_type
         FROM attributes
@@ -134,10 +133,6 @@ app.post('/api/entities/:entityName', async (req, res) => {
     }
   });
   
-
-
-
-  // Update (PUT or PATCH)
   app.put('/api/entities/:entityName/:instanceId', async (req, res) => {
     const entityName = req.params.entityName;
     const instanceId = req.params.instanceId;
@@ -159,13 +154,11 @@ app.post('/api/entities/:entityName', async (req, res) => {
     }
   });
   
-  // Delete (DELETE)
   app.delete('/api/entities/:entityName/:instanceId', async (req, res) => {
     const entityName = req.params.entityName;
     const instanceId = req.params.instanceId;
   
     try {
-      // Delete instance and its attributes
       await pool.query('DELETE FROM instance_attributes WHERE instance_id = $1', [instanceId]);
       await pool.query('DELETE FROM entity_instances WHERE instance_id = $1', [instanceId]);
   
